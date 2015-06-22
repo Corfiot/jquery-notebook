@@ -436,6 +436,8 @@
                 $('body').mouseup(function(e) {
                     if (e.target == e.currentTarget && cache.isSelecting) {
                         rawEvents.mouseUp.call(elem, e);
+                    } else if (!$(e.target).closest('.bubble').length) {
+	                    bubble.clear.call(elem.not($(e.target).closest(elem)));
                     }
                 });
 	            elem.each(function() {
