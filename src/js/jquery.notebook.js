@@ -450,7 +450,7 @@
                 if (/^\s*$/.test($(this).text())) {
                     $(this).empty();
                     var placeholder = utils.html.addTag($(this), options.basetag).addClass('placeholder');
-                    placeholder.append($(this).attr('editor-placeholder'));
+                    placeholder.append($(this).attr('data-editor-placeholder'));
                     utils.html.addTag($(this), options.basetag, typeof e.focus != 'undefined' ? e.focus : false, true);
                 } else {
                     $(this).find('.placeholder').remove();
@@ -496,8 +496,9 @@
             prepare: function(elem, customOptions) {
                 options = customOptions;
                 actions.setContentArea(elem);
-                elem.attr('editor-mode', options.mode);
-                elem.attr('editor-placeholder', options.placeholder);
+                elem.each(function() {
+	                if (!$(this).attr('data-editor-placeholder')) $(this).attr('data-editor-placeholder', options.placeholder);
+	            });
                 elem.attr('contenteditable', true);
                 elem.css('position', 'relative');
                 elem.addClass('jquery-notebook editor');
@@ -717,7 +718,7 @@
                 }
             },
             enterKey: function(e) {
-                if ($(this).attr('editor-mode') === 'inline') {
+                if (options.mode === 'inline') {
                     e.preventDefault();
                     e.stopPropagation();
                     return;
