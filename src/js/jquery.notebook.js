@@ -367,8 +367,6 @@
                 var elem = $(this).parent().find('.bubble');
                 if (!elem.hasClass('active')) return;
                 elem.removeClass('active');
-                bubble.hideLinkInput.call(this);
-                bubble.showButtons.call(this);
                 setTimeout(function() {
                     if (elem.hasClass('active')) return;
                     elem.hide();
