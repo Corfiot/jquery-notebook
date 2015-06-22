@@ -336,6 +336,7 @@
                 });
             },
             show: function() {
+            	if ($(this).attr('contenteditable') !== 'true') return;
                 var tag = $(this).parent().find('.bubble');
                 if (!tag.length) {
                     tag = utils.html.addTag($(this).parent(), 'div', false, false);
