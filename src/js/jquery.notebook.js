@@ -757,9 +757,11 @@
         };
 
     $.fn.notebook = function(options) {
-        options = $.extend({}, $.fn.notebook.defaults, options);
-        actions.prepare(this, options);
-        actions.bindEvents(this);
+    	if (this.length) {
+	        options = $.extend({}, $.fn.notebook.defaults, options);
+	        actions.prepare(this, options);
+	        actions.bindEvents(this);
+	    }
         return this;
     };
 
