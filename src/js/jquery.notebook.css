@@ -89,6 +89,7 @@
     font-size: 14pt;
     cursor: pointer;
     -webkit-font-smoothing: antialiased;
+    margin: 0;
 }
 
 .jquery-notebook.bubble button.active {
