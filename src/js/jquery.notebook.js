@@ -264,7 +264,7 @@
                     boundary = range.getBoundingClientRect(),
                     bubbleWidth = elem.outerWidth(),
                     bubbleHeight = elem.outerHeight(),
-                    x = (boundary.left + boundary.width / 2) - (bubbleWidth / 2),
+                    x = Math.round((boundary.left + boundary.width / 2) - (bubbleWidth / 2)),
                     y = boundary.top - bubbleHeight - 8,
                     left = Math.max(0 - x, 0) - Math.max(x + bubbleWidth - $(document).width(), 0),
                     pos = {
