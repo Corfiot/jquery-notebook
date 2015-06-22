@@ -449,9 +449,9 @@
             setPlaceholder: function(e) {
                 if (/^\s*$/.test($(this).text())) {
                     $(this).empty();
-                    var placeholder = utils.html.addTag($(this), 'p').addClass('placeholder');
+                    var placeholder = utils.html.addTag($(this), options.basetag).addClass('placeholder');
                     placeholder.append($(this).attr('editor-placeholder'));
-                    utils.html.addTag($(this), 'p', typeof e.focus != 'undefined' ? e.focus : false, true);
+                    utils.html.addTag($(this), options.basetag, typeof e.focus != 'undefined' ? e.focus : false, true);
                 } else {
                     $(this).find('.placeholder').remove();
                 }
@@ -504,8 +504,18 @@
                 actions.setPlaceholder.call(elem, {});
                 actions.preserveElementFocus.call(elem);
                 if (options.autoFocus === true) {
-                    var firstP = elem.find('p:not(.placeholder)');
+                    var firstP = elem.children('*:not(.placeholder)');
                     utils.cursor.set(elem, 0, firstP);
+                }
+                if (options.mode === 'inline') {
+                	options.basetag = 'span';
+                	if (!options.modifiers) options.modifiers = ['bold', 'italic', 'underline', 'anchor'];
+                } else if (options.mode === 'multiline') {
+	                options.basetag = 'div';
+                	if (!options.modifiers) options.modifiers = ['bold', 'italic', 'underline', 'ol', 'ul', 'anchor'];
+                } else {
+	                options.basetag = 'p';
+                	if (!options.modifiers) options.modifiers = ['bold', 'italic', 'underline', 'h1', 'h2', 'ol', 'ul', 'anchor'];
                 }
             }
         },
@@ -579,7 +589,7 @@
                  */
                 if (/^\s*$/.test($(this).text())) {
                     $(this).empty();
-                    utils.html.addTag($(this), 'p', true, true);
+                    utils.html.addTag($(this), options.basetag, true, true);
                 }
                 events.change.call(this);
             },
@@ -667,7 +677,7 @@
                 h1: function(e) {
                     e.preventDefault();
                     if ($(window.getSelection().anchorNode.parentNode).is('h1')) {
-                        d.execCommand('formatBlock', false, '<p>');
+                        d.execCommand('formatBlock', false, '<'+options.basetag+'>');
                     } else {
                         d.execCommand('formatBlock', false, '<h1>');
                     }
@@ -677,7 +687,7 @@
                 h2: function(e) {
                     e.preventDefault();
                     if ($(window.getSelection().anchorNode.parentNode).is('h2')) {
-                        d.execCommand('formatBlock', false, '<p>');
+                        d.execCommand('formatBlock', false, '<'+options.basetag+'>');
                     } else {
                         d.execCommand('formatBlock', false, '<h2>');
                     }
@@ -724,9 +734,11 @@
                             lastLi.remove();
                         }
                     }
-                    utils.html.addTag($(this), 'p', true, true);
-                    e.preventDefault();
-                    e.stopPropagation();
+                    if (options.mode === 'paragraphs') {
+	                    utils.html.addTag($(this), options.basetag, true, true);
+	                    e.preventDefault();
+	                    e.stopPropagation();
+	                }
                 }
                 events.change.call(this);
             },
@@ -751,7 +763,7 @@
                     var clipboardContent = '',
                         paragraphs = tempArea.val().split('\n');
                     for(var i = 0; i < paragraphs.length; i++) {
-                        clipboardContent += ['<p>', paragraphs[i], '</p>'].join('');
+                        clipboardContent += ['<'+options.basetag+'>', paragraphs[i], '</'+options.basetag+'>'].join('');
                     }
                     tempArea.val('');
                     utils.selection.restore(range);
@@ -781,8 +793,7 @@
     $.fn.notebook.defaults = {
         autoFocus: false,
         placeholder: 'Your text here...',
-        mode: 'multiline',
-        modifiers: ['bold', 'italic', 'underline', 'h1', 'h2', 'ol', 'ul', 'anchor']
+        mode: 'paragraphs'
     };
 
 })(jQuery, document, window);

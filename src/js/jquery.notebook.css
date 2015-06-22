@@ -4,13 +4,13 @@
     min-height: 50px;
 }
 
-.jquery-notebook.editor p {
+.jquery-notebook.editor p, .jquery-notebook.editor div {
     z-index: 2;
     position: relative;
     min-height: 1px;
 }
 
-.jquery-notebook.editor p.placeholder {
+.jquery-notebook.editor .placeholder {
     position: absolute;
     z-index: 1;
     opacity: 0.5;
