@@ -567,7 +567,7 @@
                     bubble.clear.call(this);
                 }
                 if (e.which === 86 && cache.command) {
-                    events.paste.call(this, e);
+                    //events.paste.call(this, e);
                 }
                 if (e.which === 90 && cache.command) {
                     events.commands.undo.call(this, e);
@@ -743,34 +743,14 @@
                 events.change.call(this);
             },
             paste: function(e) {
-                var elem = $(this),
-                    id = 'jqeditor-temparea',
-                    range = utils.selection.save(),
-                    tempArea = $('#' + id);
-                if (tempArea.length < 1) {
-                    var body = $('body');
-                    tempArea = $('<textarea></textarea>');
-                    tempArea.css({
-                        position: 'absolute',
-                        left: -1000
-                    });
-                    tempArea.attr('id', id);
-                    body.append(tempArea);
+            	e.preventDefault();
+                var clipboardContent = '',
+                    paragraphs = e.originalEvent.clipboardData.getData('Text').split('\n');
+                for(var i = 0; i < paragraphs.length; i++) {
+                    clipboardContent += ['<'+options.basetag+'>', paragraphs[i], '</'+options.basetag+'>'].join('');
                 }
-                tempArea.focus();
-
-                setTimeout(function() {
-                    var clipboardContent = '',
-                        paragraphs = tempArea.val().split('\n');
-                    for(var i = 0; i < paragraphs.length; i++) {
-                        clipboardContent += ['<'+options.basetag+'>', paragraphs[i], '</'+options.basetag+'>'].join('');
-                    }
-                    tempArea.val('');
-                    utils.selection.restore(range);
-                    d.execCommand('delete');
-                    d.execCommand('insertHTML', false, clipboardContent);
-                    events.change.call(this);
-                }, 500);
+                d.execCommand('insertHTML', false, clipboardContent);
+                events.change.call(this);
             },
             change: function(e) {
                 var contentArea = $('#jquery-notebook-content-' + $(this).attr('data-jquery-notebook-id'));
