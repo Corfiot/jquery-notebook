@@ -262,14 +262,17 @@
                 var sel = w.getSelection(),
                     range = sel.getRangeAt(0),
                     boundary = range.getBoundingClientRect(),
-                    bubbleWidth = elem.width(),
-                    bubbleHeight = elem.height(),
-                    offset = editor.offset().left,
+                    bubbleWidth = elem.outerWidth(),
+                    bubbleHeight = elem.outerHeight(),
+                    x = (boundary.left + boundary.width / 2) - (bubbleWidth / 2),
+                    y = boundary.top - bubbleHeight - 8,
+                    left = Math.max(0 - x, 0) - Math.max(x + bubbleWidth - $(document).width(), 0),
                     pos = {
-                        x: (boundary.left + boundary.width / 2) - (bubbleWidth / 2),
-                        y: boundary.top - bubbleHeight - 8 + $(document).scrollTop()
+                        x: x + left,
+                        y: y
                     };
                 transform.translate(elem, pos.x, pos.y);
+	            elem.find('.triangle').css('left',  bubbleWidth / 2 - left + 'px');
             },
             /*
              * Updates the bubble to set the active formats for the current selection.
@@ -343,6 +346,8 @@
                     tag.addClass('jquery-notebook bubble');
                 }
                 tag.empty();
+                var triangle = utils.html.addTag(tag, 'div', false, false);
+                triangle.addClass('triangle');
                 bubble.buildMenu(this, tag);
                 tag.show();
                 bubble.updateState(this, tag);
@@ -433,6 +438,13 @@
                         rawEvents.mouseUp.call(elem, e);
                     }
                 });
+	            elem.each(function() {
+		            var thisElem = $(this);
+	                thisElem.scrollParent().scroll(function() {
+	                	var thisBubble = thisElem.parent().find('.bubble');
+		                if (thisBubble.hasClass('active')) bubble.updatePos(thisElem, thisBubble);
+	                });
+	            });
             },
             setPlaceholder: function(e) {
                 if (/^\s*$/.test($(this).text())) {
