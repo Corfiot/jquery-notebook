@@ -732,9 +732,14 @@
                         var lastLi = elem.children().last();
                         if(lastLi.length && lastLi.text() === '') {
                             lastLi.remove();
+                            elem.after(utils.html.addTag(elem, options.basetag, true, true));
+                            utils.cursor.set(elem, 0, cache.focusedElement);
+                            e.preventDefault();
+                            e.stopPropagation();
                         }
                     }
-                    if (options.mode === 'paragraphs') {
+                    var isAtEnd = sel.focusNode == this || sel.focusOffset == sel.focusNode.length;
+                    if (isAtEnd && options.mode === 'paragraphs') {
 	                    utils.html.addTag($(this), options.basetag, true, true);
 	                    e.preventDefault();
 	                    e.stopPropagation();
