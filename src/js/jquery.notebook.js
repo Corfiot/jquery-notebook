@@ -146,7 +146,7 @@
                     }
                 },
                 isArrow: function(e, callback) {
-                    if (e.which >= 37 || e.which <= 40) {
+                    if ((e.which >= 37 && e.which <= 40) || e.which == 8 || e.which == 46) {
                         callback();
                     }
                 }
@@ -425,6 +425,7 @@
             bindEvents: function(elem) {
                 elem.keydown(rawEvents.keydown);
                 elem.keyup(rawEvents.keyup);
+                elem.keypress(rawEvents.keypress);
                 elem.focus(rawEvents.focus);
                 elem.bind('paste', events.paste);
                 elem.mousedown(rawEvents.mouseClick);
@@ -592,6 +593,9 @@
                     });
                 }
                 events.change.call(this);
+            },
+            keypress: function(e) {
+                bubble.clear.call(this);
             },
             focus: function(e) {
                 cache.command = false;
