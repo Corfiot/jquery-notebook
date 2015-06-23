@@ -18,6 +18,26 @@
 (function($, d, w) {
 
     /*
+     * This plugin is a standalone solution for those wishing to use jQuery UI's
+     * scrollParent method without using jQuery UI itself.
+     */
+     
+    if (!$.fn.scrollParent) $.fn.scrollParent = function() {
+        var overflowRegex = /(auto|scroll)/,
+        position = this.css( "position" ),
+        excludeStaticParent = position === "absolute",
+        scrollParent = this.parents().filter( function() {
+            var parent = $( this );
+            if ( excludeStaticParent && parent.css( "position" ) === "static" ) {
+                return false;
+            }
+            return (overflowRegex).test( parent.css( "overflow" ) + parent.css( "overflow-y" ) + parent.css( "overflow-x" ) );
+        }).eq( 0 );
+
+        return position === "fixed" || !scrollParent.length ? $( this[ 0 ].ownerDocument || document ) : scrollParent;
+    };
+
+    /*
      * This module deals with the CSS transforms. As it is not possible to easily
      * combine the transform functions with JavaScript this module abstract those
      * functions and generates a raw transform matrix, combining the new transform
