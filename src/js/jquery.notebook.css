@@ -1,23 +1,19 @@
 .jquery-notebook.editor {
-    position: relative;
     outline: none;
-    min-height: 50px;
 }
 
 .jquery-notebook.editor p, .jquery-notebook.editor div {
-    z-index: 2;
-    position: relative;
     min-height: 1px;
 }
 
-.jquery-notebook.editor .placeholder {
-    position: absolute;
-    z-index: 1;
+.jquery-notebook.editor[contenteditable=true]:empty::before,
+.jquery-notebook.editor[contenteditable=true]>:only-child:empty::before {
+    content: attr(data-editor-placeholder);
     opacity: 0.5;
     pointer-events: none;
 }
 
-.jquery-notebook p:first-child, .jquery-notebook p.placeholder + p {
+.jquery-notebook p:first-child {
     margin-top: 0;
 }
 

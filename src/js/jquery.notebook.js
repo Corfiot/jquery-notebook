@@ -447,17 +447,14 @@
 	            });
             },
             setPlaceholder: function(e) {
-                if (/^\s*$/.test($(this).text())) {
+                if (options.mode === 'paragraphs' && /^\s*$/.test($(this).text())) {
                     $(this).empty();
-                    var placeholder = utils.html.addTag($(this), options.basetag).addClass('placeholder');
-                    placeholder.append($(this).attr('data-editor-placeholder'));
-                    utils.html.addTag($(this), options.basetag, typeof e.focus != 'undefined' ? e.focus : false, true);
-                } else {
-                    $(this).find('.placeholder').remove();
+                    var placeholder = utils.html.addTag($(this), options.basetag, typeof e.focus != 'undefined' ? e.focus : false, true);
+                    placeholder.empty().attr('data-editor-placeholder', $(this).attr('data-editor-placeholder'));
                 }
             },
             removePlaceholder: function(e) {
-                $(this).find('.placeholder').remove();
+                $(this).children().removeAttr('data-editor-placeholder');
             },
             preserveElementFocus: function() {
                 var anchorNode = w.getSelection() ? w.getSelection().anchorNode : d.activeElement;
@@ -505,7 +502,7 @@
                 actions.setPlaceholder.call(elem, {});
                 actions.preserveElementFocus.call(elem);
                 if (options.autoFocus === true) {
-                    var firstP = elem.children('*:not(.placeholder)');
+                    var firstP = elem.children();
                     utils.cursor.set(elem, 0, firstP);
                 }
                 if (options.mode === 'inline') {
@@ -588,9 +585,11 @@
                  * it is the only way that I fould to solve the more serious bug
                  * that the editor was losing the p elements after deleting the whole text
                  */
-                if (/^\s*$/.test($(this).text())) {
+                if ($(this).text() === '') {
                     $(this).empty();
-                    utils.html.addTag($(this), options.basetag, true, true);
+                    actions.setPlaceholder.call(this, {
+                        focus: true
+                    });
                 }
                 events.change.call(this);
             },
