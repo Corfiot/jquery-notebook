@@ -17,6 +17,6 @@
 	],
 	"repositories": [{
 		"type": "vcs",
-		"url": "https://github.com/Corfiot/jquery-notebook.git"
+		"url": "https://github.com/Corfiot/jquery-notebook"
 	}]
 }
