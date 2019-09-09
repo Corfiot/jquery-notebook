@@ -18,6 +18,26 @@
 (function($, d, w) {
 
     /*
+     * This plugin is a standalone solution for those wishing to use jQuery UI's
+     * scrollParent method without using jQuery UI itself.
+     */
+     
+    if (!$.fn.scrollParent) $.fn.scrollParent = function() {
+        var overflowRegex = /(auto|scroll)/,
+        position = this.css( "position" ),
+        excludeStaticParent = position === "absolute",
+        scrollParent = this.parents().filter( function() {
+            var parent = $( this );
+            if ( excludeStaticParent && parent.css( "position" ) === "static" ) {
+                return false;
+            }
+            return (overflowRegex).test( parent.css( "overflow" ) + parent.css( "overflow-y" ) + parent.css( "overflow-x" ) );
+        }).eq( 0 );
+
+        return position === "fixed" || !scrollParent.length ? $( this[ 0 ].ownerDocument || document ) : scrollParent;
+    };
+
+    /*
      * This module deals with the CSS transforms. As it is not possible to easily
      * combine the transform functions with JavaScript this module abstract those
      * functions and generates a raw transform matrix, combining the new transform
@@ -146,7 +166,7 @@
                     }
                 },
                 isArrow: function(e, callback) {
-                    if (e.which >= 37 || e.which <= 40) {
+                    if ((e.which >= 37 && e.which <= 40) || e.which == 8 || e.which == 46) {
                         callback();
                     }
                 }
@@ -262,14 +282,17 @@
                 var sel = w.getSelection(),
                     range = sel.getRangeAt(0),
                     boundary = range.getBoundingClientRect(),
-                    bubbleWidth = elem.width(),
-                    bubbleHeight = elem.height(),
-                    offset = editor.offset().left,
+                    bubbleWidth = elem.outerWidth(),
+                    bubbleHeight = elem.outerHeight(),
+                    x = Math.round((boundary.left + boundary.width / 2) - (bubbleWidth / 2)),
+                    y = boundary.top - bubbleHeight - 8,
+                    left = Math.max(0 - x, 0) - Math.max(x + bubbleWidth - $(document).width(), 0),
                     pos = {
-                        x: (boundary.left + boundary.width / 2) - (bubbleWidth / 2),
-                        y: boundary.top - bubbleHeight - 8 + $(document).scrollTop()
+                        x: x + left,
+                        y: y
                     };
                 transform.translate(elem, pos.x, pos.y);
+	            elem.find('.triangle').css('left',  bubbleWidth / 2 - left + 'px');
             },
             /*
              * Updates the bubble to set the active formats for the current selection.
@@ -336,12 +359,15 @@
                 });
             },
             show: function() {
+            	if ($(this).attr('contenteditable') !== 'true') return;
                 var tag = $(this).parent().find('.bubble');
                 if (!tag.length) {
                     tag = utils.html.addTag($(this).parent(), 'div', false, false);
                     tag.addClass('jquery-notebook bubble');
                 }
                 tag.empty();
+                var triangle = utils.html.addTag(tag, 'div', false, false);
+                triangle.addClass('triangle');
                 bubble.buildMenu(this, tag);
                 tag.show();
                 bubble.updateState(this, tag);
@@ -361,8 +387,6 @@
                 var elem = $(this).parent().find('.bubble');
                 if (!elem.hasClass('active')) return;
                 elem.removeClass('active');
-                bubble.hideLinkInput.call(this);
-                bubble.showButtons.call(this);
                 setTimeout(function() {
                     if (elem.hasClass('active')) return;
                     elem.hide();
@@ -421,6 +445,7 @@
             bindEvents: function(elem) {
                 elem.keydown(rawEvents.keydown);
                 elem.keyup(rawEvents.keyup);
+                elem.keypress(rawEvents.keypress);
                 elem.focus(rawEvents.focus);
                 elem.bind('paste', events.paste);
                 elem.mousedown(rawEvents.mouseClick);
@@ -430,21 +455,27 @@
                 $('body').mouseup(function(e) {
                     if (e.target == e.currentTarget && cache.isSelecting) {
                         rawEvents.mouseUp.call(elem, e);
+                    } else if (!$(e.target).closest('.bubble').length) {
+	                    bubble.clear.call(elem.not($(e.target).closest(elem)));
                     }
                 });
+	            elem.each(function() {
+		            var thisElem = $(this);
+	                thisElem.scrollParent().scroll(function() {
+	                	var thisBubble = thisElem.parent().find('.bubble');
+		                if (thisBubble.hasClass('active')) bubble.updatePos(thisElem, thisBubble);
+	                });
+	            });
             },
             setPlaceholder: function(e) {
-                if (/^\s*$/.test($(this).text())) {
+                if (options.mode === 'paragraphs' && /^\s*$/.test($(this).text())) {
                     $(this).empty();
-                    var placeholder = utils.html.addTag($(this), 'p').addClass('placeholder');
-                    placeholder.append($(this).attr('editor-placeholder'));
-                    utils.html.addTag($(this), 'p', typeof e.focus != 'undefined' ? e.focus : false, true);
-                } else {
-                    $(this).find('.placeholder').remove();
+                    var placeholder = utils.html.addTag($(this), options.basetag, typeof e.focus != 'undefined' ? e.focus : false, true);
+                    placeholder.empty().attr('data-editor-placeholder', $(this).attr('data-editor-placeholder'));
                 }
             },
             removePlaceholder: function(e) {
-                $(this).find('.placeholder').remove();
+                $(this).children().removeAttr('data-editor-placeholder');
             },
             preserveElementFocus: function() {
                 var anchorNode = w.getSelection() ? w.getSelection().anchorNode : d.activeElement;
@@ -483,16 +514,27 @@
             prepare: function(elem, customOptions) {
                 options = customOptions;
                 actions.setContentArea(elem);
-                elem.attr('editor-mode', options.mode);
-                elem.attr('editor-placeholder', options.placeholder);
+                elem.each(function() {
+	                if (!$(this).attr('data-editor-placeholder')) $(this).attr('data-editor-placeholder', options.placeholder);
+	            });
                 elem.attr('contenteditable', true);
                 elem.css('position', 'relative');
                 elem.addClass('jquery-notebook editor');
                 actions.setPlaceholder.call(elem, {});
                 actions.preserveElementFocus.call(elem);
                 if (options.autoFocus === true) {
-                    var firstP = elem.find('p:not(.placeholder)');
+                    var firstP = elem.children();
                     utils.cursor.set(elem, 0, firstP);
+                }
+                if (options.mode === 'inline') {
+                	options.basetag = 'span';
+                	if (!options.modifiers) options.modifiers = ['bold', 'italic', 'underline', 'anchor'];
+                } else if (options.mode === 'multiline') {
+	                options.basetag = 'div';
+                	if (!options.modifiers) options.modifiers = ['bold', 'italic', 'underline', 'ol', 'ul', 'anchor'];
+                } else {
+	                options.basetag = 'p';
+                	if (!options.modifiers) options.modifiers = ['bold', 'italic', 'underline', 'h1', 'h2', 'ol', 'ul', 'anchor'];
                 }
             }
         },
@@ -544,7 +586,7 @@
                     bubble.clear.call(this);
                 }
                 if (e.which === 86 && cache.command) {
-                    events.paste.call(this, e);
+                    //events.paste.call(this, e);
                 }
                 if (e.which === 90 && cache.command) {
                     events.commands.undo.call(this, e);
@@ -564,11 +606,16 @@
                  * it is the only way that I fould to solve the more serious bug
                  * that the editor was losing the p elements after deleting the whole text
                  */
-                if (/^\s*$/.test($(this).text())) {
+                if ($(this).text() === '') {
                     $(this).empty();
-                    utils.html.addTag($(this), 'p', true, true);
+                    actions.setPlaceholder.call(this, {
+                        focus: true
+                    });
                 }
                 events.change.call(this);
+            },
+            keypress: function(e) {
+                bubble.clear.call(this);
             },
             focus: function(e) {
                 cache.command = false;
@@ -654,7 +701,7 @@
                 h1: function(e) {
                     e.preventDefault();
                     if ($(window.getSelection().anchorNode.parentNode).is('h1')) {
-                        d.execCommand('formatBlock', false, '<p>');
+                        d.execCommand('formatBlock', false, '<'+options.basetag+'>');
                     } else {
                         d.execCommand('formatBlock', false, '<h1>');
                     }
@@ -664,7 +711,7 @@
                 h2: function(e) {
                     e.preventDefault();
                     if ($(window.getSelection().anchorNode.parentNode).is('h2')) {
-                        d.execCommand('formatBlock', false, '<p>');
+                        d.execCommand('formatBlock', false, '<'+options.basetag+'>');
                     } else {
                         d.execCommand('formatBlock', false, '<h2>');
                     }
@@ -694,7 +741,7 @@
                 }
             },
             enterKey: function(e) {
-                if ($(this).attr('editor-mode') === 'inline') {
+                if (options.mode === 'inline') {
                     e.preventDefault();
                     e.stopPropagation();
                     return;
@@ -709,43 +756,30 @@
                         var lastLi = elem.children().last();
                         if(lastLi.length && lastLi.text() === '') {
                             lastLi.remove();
+                            elem.after(utils.html.addTag(elem, options.basetag, true, true));
+                            utils.cursor.set(elem, 0, cache.focusedElement);
+                            e.preventDefault();
+                            e.stopPropagation();
                         }
                     }
-                    utils.html.addTag($(this), 'p', true, true);
-                    e.preventDefault();
-                    e.stopPropagation();
+                    var isAtEnd = sel.focusNode == this || sel.focusOffset == sel.focusNode.length;
+                    if (isAtEnd && options.mode === 'paragraphs') {
+	                    utils.html.addTag($(this), options.basetag, true, true);
+	                    e.preventDefault();
+	                    e.stopPropagation();
+	                }
                 }
                 events.change.call(this);
             },
             paste: function(e) {
-                var elem = $(this),
-                    id = 'jqeditor-temparea',
-                    range = utils.selection.save(),
-                    tempArea = $('#' + id);
-                if (tempArea.length < 1) {
-                    var body = $('body');
-                    tempArea = $('<textarea></textarea>');
-                    tempArea.css({
-                        position: 'absolute',
-                        left: -1000
-                    });
-                    tempArea.attr('id', id);
-                    body.append(tempArea);
+            	e.preventDefault();
+                var clipboardContent = '',
+                    paragraphs = e.originalEvent.clipboardData.getData('Text').split('\n');
+                for(var i = 0; i < paragraphs.length; i++) {
+                    clipboardContent += ['<'+options.basetag+'>', paragraphs[i], '</'+options.basetag+'>'].join('');
                 }
-                tempArea.focus();
-
-                setTimeout(function() {
-                    var clipboardContent = '',
-                        paragraphs = tempArea.val().split('\n');
-                    for(var i = 0; i < paragraphs.length; i++) {
-                        clipboardContent += ['<p>', paragraphs[i], '</p>'].join('');
-                    }
-                    tempArea.val('');
-                    utils.selection.restore(range);
-                    d.execCommand('delete');
-                    d.execCommand('insertHTML', false, clipboardContent);
-                    events.change.call(this);
-                }, 500);
+                d.execCommand('insertHTML', false, clipboardContent);
+                events.change.call(this);
             },
             change: function(e) {
                 var contentArea = $('#jquery-notebook-content-' + $(this).attr('data-jquery-notebook-id'));
@@ -757,17 +791,18 @@
         };
 
     $.fn.notebook = function(options) {
-        options = $.extend({}, $.fn.notebook.defaults, options);
-        actions.prepare(this, options);
-        actions.bindEvents(this);
+    	if (this.length) {
+	        options = $.extend({}, $.fn.notebook.defaults, options);
+	        actions.prepare(this, options);
+	        actions.bindEvents(this);
+	    }
         return this;
     };
 
     $.fn.notebook.defaults = {
         autoFocus: false,
         placeholder: 'Your text here...',
-        mode: 'multiline',
-        modifiers: ['bold', 'italic', 'underline', 'h1', 'h2', 'ol', 'ul', 'anchor']
+        mode: 'paragraphs'
     };
 
 })(jQuery, document, window);
