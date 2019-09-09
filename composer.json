@@ -1,0 +1,22 @@
+{
+	"name": "corfiot/jquery-notebook",
+	"description": "A modern, simple and elegant WYSIWYG rich text editor.",
+	"version": "0.5.0",
+	"readme": "README.md",
+	"license": "MIT",
+	"authors": [{
+			"name": "Raphael Cruzeiro",
+			"email": "raphael.cruzeiro@gmail.com",
+			"role": "Original developer"
+		},
+		{
+			"name": "George Miliotis",
+			"email": "gm@elementality.gr",
+			"role": "Fork developer"
+		}
+	],
+	"repositories": [{
+		"type": "vcs",
+		"url": "https://github.com/Corfiot/jquery-notebook.git"
+	}]
+}
